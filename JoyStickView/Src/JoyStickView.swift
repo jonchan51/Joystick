@@ -203,42 +203,17 @@ import CoreGraphics
 
 extension JoyStickView {
     /**
-     A touch began in the joystick view
-     - parameter touches: the set of UITouch instances, one for each touch event
-     - parameter event: additional event info (ignored)
+     Handles the behavior of the pan gesture.
      */
-    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        updatePosition(touch: touch)
-    }
-
-    /**
-     An existing touch has moved.
-     - parameter touches: the set of UITouch instances, one for each touch event
-     - parameter event: additional event info (ignored)
-     */
-    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        updatePosition(touch: touch)
-    }
-
-    /**
-     An existing touch event has been cancelled (probably due to system event such as an alert). Move joystick to
-     center of base.
-     - parameter touches: the set of UITouch instances, one for each touch event (ignored)
-     - parameter event: additional event info (ignored)
-     */
-    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        homePosition()
-    }
-
-    /**
-     User removed touch from display. Move joystick to center of base.
-     - parameter touches: the set of UITouch instances, one for each touch event (ignored)
-     - parameter event: additional event info (ignored)
-     */
-    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        homePosition()
+    @objc public func handlePan(recognizer: UIGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed:
+            updateLocation(location: recognizer.location(in: self))
+        case .cancelled, .ended:
+            homePosition()
+        default:
+            return
+        }
     }
 
     /**
@@ -286,11 +261,20 @@ extension JoyStickView {
         if enableDoubleTapForFrameReset {
             installDoubleTapGestureRecognizer()
         }
+        installPanGestureRecognizer()
     }
 
     private func scaleHandleImageView() {
         let inset = (1.0 - handleSizeRatio) * bounds.width / 2.0
         handleImageView.frame = bounds.insetBy(dx: inset, dy: inset)
+    }
+    
+    /**
+     Installs a UIPanGestureRecognizer to detect drag pan activity on the joystick.
+     */
+    private func installPanGestureRecognizer() {
+        let gesture: UIGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan(recognizer:)))
+        addGestureRecognizer(gesture)
     }
     
     /**
